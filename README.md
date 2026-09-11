@@ -70,8 +70,8 @@ sequenceDiagram
     participant S as TransferService
     participant P as PostgreSQL
 
-    C->>A: POST /transfers<br/>JWT + idempotency_key
-    A->>A: Verify HS256 JWT; read sub
+    C->>A: POST /transfers with JWT and idempotency key
+    A->>A: Verify HS256 JWT and read subject
     A->>S: create(caller_user_id, request)
     S->>P: BEGIN
     S->>P: INSERT transfer ON CONFLICT DO NOTHING
