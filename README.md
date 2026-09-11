@@ -408,7 +408,7 @@ JWT_SECRET=local-development-only-secret-change-me
 TEST_SEED_KEY=local-test-seed-key-change-me
 ```
 
-Those values must match `.env`. The script creates temporary UUID users and signed test JWTs, then uses the restricted test-funding endpoint to seed balances.
+Set `JWT_SECRET` and `TEST_SEED_KEY` to the corresponding deployment values before running the script. The script intentionally does not store credentials. It creates temporary UUID users and signed test JWTs, then uses the restricted test-funding endpoint to seed balances.
 
 ### Run against a demo deployment
 

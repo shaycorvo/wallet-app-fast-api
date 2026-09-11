@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${WALLET_BASE_URL:=http://127.0.0.1:8000}"
-: "${JWT_SECRET:=local-development-only-secret-change-me}"
-: "${TEST_SEED_KEY:=local-test-seed-key-change-me}"
+: "${WALLET_BASE_URL:=https://wallet-app-fast-api.onrender.com}"
+: "${JWT_SECRET:?Set JWT_SECRET to the deployment JWT signing secret}"
+: "${TEST_SEED_KEY:?Set TEST_SEED_KEY to the deployment test seed key}"
 
 for command in curl jq openssl uuidgen xargs; do
   command -v "$command" >/dev/null || { echo "Missing required command: $command" >&2; exit 1; }
