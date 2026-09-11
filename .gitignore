@@ -1,0 +1,21 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+*.egg-info/
+graphify-out/
+.coverage
+htmlcov/
+
+# Local editor files
+.vscode/
+.DS_Store
+
+# Assignment/reference artifacts are not part of the application deliverable.
+01-wallet-transfer-*.md
+fastapi-best-practices.md
+*.pdf
