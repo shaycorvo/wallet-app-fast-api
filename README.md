@@ -500,7 +500,7 @@ Copy [`.env.example`](.env.example) to `.env`. `.env` is ignored by Git and must
 | Variable | Required | Default | Description |
 | --- | --- | --- | --- |
 | `APP_ENVIRONMENT` | No | `local` | `local`, `test`, and `demo` can enable protected test funding. |
-| `DATABASE_URL` | Yes | none | Async SQLAlchemy PostgreSQL URL. |
+| `DATABASE_URL` | Yes | none | PostgreSQL URL. Standard `postgres://` and `postgresql://` Render URLs are automatically converted to the asyncpg driver URL. |
 | `TEST_DATABASE_URL` | No | derived as `.../wallet_test` | Isolated database used by pytest. |
 | `DATABASE_POOL_SIZE` | No | `10` | Persistent async pool size. |
 | `DATABASE_MAX_OVERFLOW` | No | `5` | Extra temporary pool connections. |
@@ -515,7 +515,7 @@ openssl rand -hex 32
 
 ## Deployment notes
 
-The multi-stage image is based on `python:3.12-slim`, exposes port `8000`, and runs as a non-root `app` user. Deploy the image alongside a **managed PostgreSQL** database and set at least:
+The multi-stage image is based on `python:3.12-slim`, exposes port `8000` for local use, honors the hosting platform's `PORT` variable, and runs as a non-root `app` user. Deploy the image alongside a **managed PostgreSQL** database and set at least:
 
 ```text
 APP_ENVIRONMENT=demo
