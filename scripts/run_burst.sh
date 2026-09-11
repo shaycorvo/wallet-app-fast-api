@@ -4,6 +4,8 @@ set -euo pipefail
 : "${WALLET_BASE_URL:=https://wallet-app-fast-api.onrender.com}"
 : "${JWT_SECRET:?Set JWT_SECRET to the deployment JWT signing secret}"
 : "${TEST_SEED_KEY:?Set TEST_SEED_KEY to the deployment test seed key}"
+: "${READINESS_RETRY_SECONDS:=30}"
+: "${READINESS_MAX_ATTEMPTS:=6}"
 
 for command in curl jq openssl uuidgen xargs; do
   command -v "$command" >/dev/null || { echo "Missing required command: $command" >&2; exit 1; }
@@ -15,20 +17,32 @@ trap 'rm -rf "$work_dir"' EXIT
 b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
 
 check_ready() {
-  local url="$WALLET_BASE_URL/ready" response_file status_code body
-  response_file="$(mktemp "$work_dir/ready.XXXXXX")"
-  printf 'Preflight: GET %s\n' "$url"
-  status_code="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' "$url")" || {
-    echo "Service is down: unable to reach $url. Start the service or check the deployed URL." >&2
-    exit 1
-  }
-  body="$(<"$response_file")"
-  printf 'Preflight response: HTTP %s %s\n' "$status_code" "$body"
-  if [[ "$status_code" != "200" ]]; then
-    echo "Service is not ready: $url returned HTTP $status_code. Resolve the outage before running the burst." >&2
-    exit 1
-  fi
-  echo 'Readiness check passed: API and database are available.'
+  local url="$WALLET_BASE_URL/ready" response_file status_code body attempt
+  echo 'Checking whether the API and database are ready before starting the test cases.'
+  echo 'A sleeping free Render service can take about a minute to wake up. Retrying every 30 seconds if needed.'
+
+  for attempt in $(seq 1 "$READINESS_MAX_ATTEMPTS"); do
+    response_file="$(mktemp "$work_dir/ready.XXXXXX")"
+    printf 'Readiness attempt %s/%s: GET %s\n' "$attempt" "$READINESS_MAX_ATTEMPTS" "$url"
+    status_code="$(curl --silent --show-error --connect-timeout 10 --max-time 20 \
+      --output "$response_file" --write-out '%{http_code}' "$url")" || status_code="000"
+    body="$(<"$response_file")"
+    if [[ "$status_code" == "200" ]]; then
+      printf 'Readiness response: HTTP %s %s\n' "$status_code" "$body"
+      echo 'Readiness check passed: API and database are available. Starting test cases.'
+      return
+    fi
+
+    if (( attempt < READINESS_MAX_ATTEMPTS )); then
+      printf 'Service is not ready yet (HTTP %s). It may be waking up; retrying in %s seconds.\n' \
+        "$status_code" "$READINESS_RETRY_SECONDS"
+      sleep "$READINESS_RETRY_SECONDS"
+    fi
+  done
+
+  echo "Service did not become ready after $READINESS_MAX_ATTEMPTS attempts: $url" >&2
+  echo 'Check the Render deployment logs and database status, then rerun this script.' >&2
+  exit 1
 }
 
 jwt_for() {
